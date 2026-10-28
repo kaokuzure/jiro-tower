@@ -12,6 +12,7 @@ const DST = join(process.cwd(), 'public', 'jiros');
 const ALPHA_THRESHOLD = 8;
 const BOTTOM_DENSITY_CUT = 15; // 最下行の不透明率がこの%以上なら「切断」とみなす
 const FADE_RATIO = 0.16; // 延長の長さ（画像高に対する比率）
+const NO_FADE = new Set(['jiro_01.png', 'jiro_03.png', 'jiro_07.png']); // フェード延長しない（元絵 or 足まで完成済み）
 
 function bbox(png) {
   const { width, height, data } = png;
@@ -87,7 +88,7 @@ for (const file of files) {
   // 下端切断の検出（トリミング前に判定）
   const density = bottomDensity(png, bb);
   let fadeH = 0;
-  if (density >= BOTTOM_DENSITY_CUT) {
+  if (density >= BOTTOM_DENSITY_CUT && !NO_FADE.has(file)) {
     fadeH = Math.max(12, Math.round(((bb.maxY - bb.minY + 1) * FADE_RATIO)));
     png = extendFade(png, fadeH);
     bb = bbox(png);

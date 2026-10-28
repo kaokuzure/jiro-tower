@@ -1,6 +1,6 @@
 {
   "jiro_01.png": {
-    "fadeH": 137
+    "fadeH": 0
   },
   "jiro_02.png": {
     "fadeH": 0
@@ -27,7 +27,7 @@
     "fadeH": 0
   },
   "jiro_10.png": {
-    "fadeH": 0
+    "fadeH": 75
   },
   "jiro_11.png": {
     "fadeH": 0
