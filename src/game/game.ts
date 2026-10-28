@@ -6,8 +6,8 @@ const { Engine, Composite, Bodies, Body, Events } = Matter;
 // ---- ゲーム世界の定数（カメラや画面サイズに依存しない） ----
 export const PX_PER_M = 60; // 60px = 1m として高度を表示
 const WORLD_W = 672; // 台地（地面）の幅
-const VIEW_W = 900; // 画面横いっぱいに見える世界の幅（台地より広い＝引きの画角）
-const VIEW_H = 1500; // 縦の基準画角
+const VIEW_W = 780; // 画面横いっぱいに見える世界の幅（台地より広い＝引きの画角）
+const VIEW_H = 1280; // 縦の基準画角
 const GROUND_Y = 560; // 地面の上面（世界座標）
 const GROUND_H = 220;
 const VOID_Y = GROUND_Y + 400; // ここまで落ちたら画面外＝消失
@@ -35,8 +35,6 @@ export interface HudState {
 interface JiroMeta {
   inTower: boolean; // 次のジローが生成済み＝積み上げ済み扱い
   touchedAny: boolean;
-  groundContacts: number;
-  groundedAtSettle: boolean; // 安定した時点で地面に接していた（＝初回着地が地面）
   fallen: boolean; // 落下済み（ライフ消費済み）
 }
 
@@ -165,8 +163,6 @@ export class Game {
     this.metas.set(body, {
       inTower: false,
       touchedAny: false,
-      groundContacts: 0,
-      groundedAtSettle: false,
       fallen: false,
     });
     Composite.add(this.engine.world, body);
@@ -220,25 +216,6 @@ export class Game {
       for (const pair of e.pairs) {
         this.noteTouch(pair.bodyA);
         this.noteTouch(pair.bodyB);
-        const other = pair.bodyA === this.ground ? pair.bodyB : pair.bodyB === this.ground ? pair.bodyA : null;
-        if (!other) continue;
-        const meta = this.metas.get(other);
-        if (!meta) continue;
-        meta.groundContacts++;
-        // 積み上げ済み（初回着地が地面ではない）ジローが地面に触れたら落下扱い
-        if (meta.inTower && !meta.groundedAtSettle && !meta.fallen) {
-          meta.fallen = true;
-          this.loseLife();
-        }
-      }
-    });
-    Events.on(engine, 'collisionEnd', (e) => {
-      for (const pair of e.pairs) {
-        const other = pair.bodyA === this.ground ? pair.bodyB : pair.bodyB === this.ground ? pair.bodyA : null;
-        if (!other) continue;
-        const meta = this.metas.get(other);
-        if (!meta) continue;
-        meta.groundContacts = Math.max(0, meta.groundContacts - 1);
       }
     });
 
@@ -394,10 +371,7 @@ export class Game {
 
   private settle(): void {
     const meta = this.current ? this.metas.get(this.current) : null;
-    if (meta) {
-      meta.inTower = true;
-      meta.groundedAtSettle = meta.groundContacts > 0;
-    }
+    if (meta) meta.inTower = true;
     this.current = null;
     this.currentAsset = null;
     this.aimIndex = this.nextIndex;
@@ -411,13 +385,28 @@ export class Game {
     for (let i = this.pieces.length - 1; i >= 0; i--) {
       const b = this.pieces[i];
       const meta = this.metas.get(b);
-      if (!meta?.inTower || meta.fallen) continue;
+      if (!meta || meta.fallen) continue;
+      // 台地の外へ出た（＝落ちた）ピースのみライフを消費する。
+      // 塔の上で地面に触れただけでは減らさない
+      const offSide = b.position.x < -30 || b.position.x > WORLD_W + 30;
+      const sunk = b.position.y > GROUND_Y + 140;
+      if (!offSide && !sunk) continue;
+      meta.fallen = true;
+      const isCurrent = b === this.current;
       if (b.position.y > VOID_Y) {
-        // 台地の外へ落ちて消失
-        meta.fallen = true;
         Composite.remove(this.engine!.world, b);
         this.pieces.splice(i, 1);
-        this.loseLife();
+      }
+      this.loseLife();
+      if (isCurrent && this.phase === 'falling') {
+        // 落下中のピースが落ちたので、次のジローへ即座に進む
+        this.current = null;
+        this.currentAsset = null;
+        this.aimIndex = this.nextIndex;
+        this.nextIndex = this.pickRandom(this.aimIndex);
+        this.aimAngle = 0;
+        this.phase = 'aiming';
+        this.pushHudState();
       }
     }
   }
@@ -632,7 +621,6 @@ export class Game {
       const w = asset.drawW;
       const h = asset.drawH;
       ctx.save();
-      if (meta.fallen) ctx.globalAlpha = 0.45;
       ctx.translate(b.position.x, b.position.y);
       ctx.rotate(b.angle);
       ctx.drawImage(asset.asset.img, -w / 2, -h / 2, w, h);

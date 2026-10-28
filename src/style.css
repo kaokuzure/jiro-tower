@@ -169,10 +169,9 @@ body {
 }
 
 .gameover {
-  /* タワー全体が見えるよう、パネルは上部に置いて背景は薄く */
-  justify-content: flex-start;
-  background: linear-gradient(rgba(8, 14, 26, 0.55), rgba(8, 14, 26, 0.12) 45%, rgba(8, 14, 26, 0));
-  backdrop-filter: none;
+  justify-content: center;
+  background: rgba(8, 14, 26, 0.35);
+  backdrop-filter: blur(1px);
 }
 
 .go-panel {
