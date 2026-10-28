@@ -5,7 +5,7 @@ const { Engine, Composite, Bodies, Body, Events } = Matter;
 
 // ---- ゲーム世界の定数（カメラや画面サイズに依存しない） ----
 export const PX_PER_M = 60; // 60px = 1m として高度を表示
-const WORLD_W = 480; // 台地（地面）の幅
+const WORLD_W = 672; // 台地（地面）の幅
 const VIEW_W = 900; // 画面横いっぱいに見える世界の幅（台地より広い＝引きの画角）
 const VIEW_H = 1500; // 縦の基準画角
 const GROUND_Y = 560; // 地面の上面（世界座標）

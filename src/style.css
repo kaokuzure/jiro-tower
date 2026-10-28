@@ -77,6 +77,23 @@ body {
   border-radius: 10px;
 }
 
+.btn-bgm {
+  align-self: stretch;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffd7ad;
+  font-size: 1.05rem;
+  cursor: pointer;
+  padding: 0 12px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-bgm.off {
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+
 .stat-label {
   font-size: 0.62rem;
   color: #9fb3cf;

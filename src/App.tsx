@@ -35,9 +35,42 @@ function useHoldRepeat() {
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const gameRef = useRef<Game | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [hud, setHud] = useState<HudState>(INITIAL_HUD);
   const [error, setError] = useState<string | null>(null);
+  const [bgmOn, setBgmOn] = useState(() => localStorage.getItem('jiro-tower-bgm') !== 'off');
   const rotate = useHoldRepeat();
+
+  useEffect(() => {
+    const audio = new Audio('bgm.mp3');
+    audio.loop = true;
+    audio.volume = 0.4;
+    audioRef.current = audio;
+    if (import.meta.env.DEV) (window as unknown as { __bgm?: HTMLAudioElement }).__bgm = audio;
+    return () => {
+      audio.pause();
+      audioRef.current = null;
+      delete (window as unknown as { __bgm?: HTMLAudioElement }).__bgm;
+    };
+  }, []);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    localStorage.setItem('jiro-tower-bgm', bgmOn ? 'on' : 'off');
+    if (bgmOn) {
+      audio.play().catch(() => undefined);
+      // ブラウザの自動再生制限のため、最初の操作で再生を試す
+      const retry = () => audio.play().catch(() => undefined);
+      window.addEventListener('pointerdown', retry, { once: true });
+      window.addEventListener('keydown', retry, { once: true });
+      return () => {
+        window.removeEventListener('pointerdown', retry);
+        window.removeEventListener('keydown', retry);
+      };
+    }
+    audio.pause();
+  }, [bgmOn]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -136,6 +169,14 @@ export default function App() {
           <p className='hud-sub'>{hud.stackCount} 段</p>
         </div>
         <div className='hud-stats'>
+          <button
+            className={`btn-bgm${bgmOn ? '' : ' off'}`}
+            onClick={() => setBgmOn((v) => !v)}
+            aria-label={bgmOn ? 'BGMをオフにする' : 'BGMをオンにする'}
+            title={bgmOn ? 'BGM オフ' : 'BGM オン'}
+          >
+            ♪
+          </button>
           <div className='stat'>
             <span className='stat-label'>ライフ</span>
             <span className='hearts' key={hud.lives}>
