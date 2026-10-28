@@ -58,6 +58,7 @@ const a0 = await page.evaluate(() => window.__jiroGame.lives);
 await page.evaluate(() => {
   const gm = window.__jiroGame;
   const b = gm.pieces[0];
+  b.isSleeping = false; // テレポート前に起こす（テスト固有の凍結防止）
   // 台地の端の外へ押し出す
   b.position.x = 720;
   b.position.y = 540;

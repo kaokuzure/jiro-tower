@@ -386,11 +386,9 @@ export class Game {
       const b = this.pieces[i];
       const meta = this.metas.get(b);
       if (!meta || meta.fallen) continue;
-      // 台地の外へ出た（＝落ちた）ピースのみライフを消費する。
-      // 塔の上で地面に触れただけでは減らさない
-      const offSide = b.position.x < -30 || b.position.x > WORLD_W + 30;
-      const sunk = b.position.y > GROUND_Y + 140;
-      if (!offSide && !sunk) continue;
+      // ピースが地面の高さより下に落下した時だけライフを消費する。
+      // 台地の上に載っている間（中心が GROUND_Y より上）は減らさない
+      if (b.position.y <= GROUND_Y + 20) continue;
       meta.fallen = true;
       const isCurrent = b === this.current;
       if (b.position.y > VOID_Y) {
