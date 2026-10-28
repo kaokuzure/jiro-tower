@@ -150,7 +150,7 @@ export class Game {
     if (this.phase !== 'aiming' || !this.engine) return;
     const asset = this.assets[this.aimIndex];
     const w = asset.width;
-    const h = asset.height;
+    const h = asset.colliderH; // 当たり判定はフェード延長を含まない
     const body = Bodies.rectangle(this.aimX, this.aimY(), w, h, {
       angle: this.aimAngle,
       chamfer: { radius: Math.min(w, h) * 0.07 },
@@ -159,7 +159,7 @@ export class Game {
       restitution: 0.02,
       density: 0.0015,
     });
-    body.__jiro = { asset, drawW: w, drawH: h };
+    body.__jiro = { asset, drawW: w, drawH: asset.height };
     this.metas.set(body, {
       inTower: false,
       touchedAny: false,
@@ -582,7 +582,7 @@ export class Game {
 
   private drawGuide(ctx: CanvasRenderingContext2D): void {
     if (this.phase !== 'aiming') return;
-    const y0 = this.aimY() + this.assets[this.aimIndex].height / 2;
+    const y0 = this.aimY() + this.assets[this.aimIndex].colliderH / 2;
     ctx.save();
     ctx.strokeStyle = 'rgba(255,255,255,0.35)';
     ctx.setLineDash([6, 8]);
@@ -618,10 +618,12 @@ export class Game {
       if (!asset) continue;
       const w = asset.drawW;
       const h = asset.drawH;
+      const ch = asset.asset.colliderH;
       ctx.save();
       ctx.translate(b.position.x, b.position.y);
       ctx.rotate(b.angle);
-      ctx.drawImage(asset.asset.img, -w / 2, -h / 2, w, h);
+      // 当たり判定の上端に画像の上端を合わせ、フェード延長部分は下へはみ出させる
+      ctx.drawImage(asset.asset.img, -w / 2, -ch / 2, w, h);
       ctx.restore();
     }
   }
@@ -634,7 +636,7 @@ export class Game {
     ctx.globalAlpha = 0.95;
     ctx.translate(this.aimX, this.aimY());
     ctx.rotate(this.aimAngle);
-    ctx.drawImage(asset.img, -w / 2, -h / 2, w, h);
+    ctx.drawImage(asset.img, -w / 2, -asset.colliderH / 2, w, h);
     ctx.restore();
   }
 
